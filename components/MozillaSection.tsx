@@ -65,6 +65,12 @@ export default function MozillaSection({
     generateFace();
     const faceInterval = setInterval(generateFace, 150);
 
+    const skipFace = () => {
+      setDeepfakeStep("warning");
+      setSpacebarCallback(playDeepfakeAudio);
+    };
+    setSpacebarCallback(skipFace);
+
     const timer = setTimeout(() => {
       setDeepfakeStep("warning");
       setSpacebarCallback(playDeepfakeAudio);
@@ -85,6 +91,18 @@ export default function MozillaSection({
       setDeepfakeStep("transcript");
       setSpacebarCallback(showMap);
     };
+
+    const skipAudio = () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      spoken = true;
+      setDeepfakeStep("transcript");
+      setShowAudioHint(true);
+      setSpacebarCallback(showMap);
+    };
+
+    setSpacebarCallback(skipAudio);
 
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       try {
@@ -162,6 +180,16 @@ export default function MozillaSection({
         }
       }
     ];
+
+    const skipMapZoom = () => {
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current = [];
+      setMapZoomStep(5);
+      setMapLabel("THIS is who we build for. Not everyone. This person.");
+      setSpacebarCallback(onComplete);
+    };
+
+    setSpacebarCallback(skipMapZoom);
 
     steps.forEach((s) => {
       const t = setTimeout(() => {

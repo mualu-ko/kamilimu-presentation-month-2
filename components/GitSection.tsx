@@ -47,6 +47,15 @@ export default function GitSection({
     setGitLines([]);
     setShowPrStatus(false);
 
+    const skipGit = () => {
+      timeouts.forEach(clearTimeout);
+      setGitLines(steps.map((s) => s.html));
+      setShowPrStatus(true);
+      setSpacebarCallback(onComplete);
+    };
+
+    setSpacebarCallback(skipGit);
+
     steps.forEach((step) => {
       const t = setTimeout(() => {
         setGitLines((prev) => [...prev, step.html]);

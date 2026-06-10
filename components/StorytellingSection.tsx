@@ -46,8 +46,18 @@ export default function StorytellingSection({
     if (storyStep === 0) {
       setSpacebarCallback(advanceStory);
     } else if (storyStep === 1) {
-      let t2: NodeJS.Timeout;
-      let t3: NodeJS.Timeout;
+      let t2: NodeJS.Timeout | null = null;
+      let t3: NodeJS.Timeout | null = null;
+
+      const skipMehrabian = () => {
+        clearTimeout(t1);
+        if (t2) clearTimeout(t2);
+        if (t3) clearTimeout(t3);
+        setMehrabianHeights([40, 120, 200]);
+        setSpacebarCallback(advanceStory);
+      };
+      setSpacebarCallback(skipMehrabian);
+
       const t1 = setTimeout(() => {
         setMehrabianHeights([40, 0, 0]);
         t2 = setTimeout(() => {
@@ -76,6 +86,14 @@ export default function StorytellingSection({
       setSpeechQuoteText(currentQuote);
 
       let timeoutId: NodeJS.Timeout;
+
+      const skipQuote = () => {
+        clearTimeout(timeoutId);
+        setSpeechQuoteText("“" + fullQuote + "”");
+        setSpacebarCallback(advanceStory);
+      };
+      setSpacebarCallback(skipQuote);
+
       const addWord = () => {
         const suffix = wi < words.length - 1 ? " " : "”";
         currentQuote += words[wi] + suffix;
@@ -94,6 +112,13 @@ export default function StorytellingSection({
         clearTimeout(timeoutId);
       };
     } else if (storyStep === 4) {
+      const skipWhyStories = () => {
+        clearTimeout(t);
+        setShowWhyStoriesPhoto(true);
+        setSpacebarCallback(advanceStory);
+      };
+      setSpacebarCallback(skipWhyStories);
+
       const t = setTimeout(() => {
         setShowWhyStoriesPhoto(true);
         setSpacebarCallback(advanceStory);

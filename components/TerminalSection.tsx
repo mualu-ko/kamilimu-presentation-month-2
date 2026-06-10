@@ -55,6 +55,39 @@ interface TerminalSectionProps {
   onComplete: () => void;
 }
 
+interface TypewriterSpanProps {
+  text: string;
+  active: boolean;
+  onComplete: () => void;
+  speed?: number;
+}
+
+function TypewriterSpan({ text, active, onComplete, speed = 15 }: TypewriterSpanProps) {
+  const [displayed, setDisplayed] = useState("");
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  useEffect(() => {
+    if (!active) {
+      setDisplayed("");
+      return;
+    }
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < text.length) {
+        setDisplayed(text.substring(0, i + 1));
+        i++;
+      } else {
+        clearInterval(interval);
+        onCompleteRef.current();
+      }
+    }, speed);
+    return () => clearInterval(interval);
+  }, [text, active, speed]);
+
+  return <>{displayed}</>;
+}
+
 export default function TerminalSection({
   isActive,
   setSpacebarCallback,
@@ -62,9 +95,7 @@ export default function TerminalSection({
 }: TerminalSectionProps) {
   const [terminalLines, setTerminalLines] = useState<string[]>([]);
   const [showOSISection, setShowOSISection] = useState(false);
-  const [osiLayersVisible, setOsiLayersVisible] = useState(0);
-  const [tcpLayersVisible, setTcpLayersVisible] = useState(0);
-  const [cybersecQuote, setCybersecQuote] = useState("");
+  const [currentTypingIndex, setCurrentTypingIndex] = useState(-1);
   const [hatIndex, setHatIndex] = useState(-1);
 
   const terminalEndRef = useRef<HTMLDivElement>(null);
@@ -100,9 +131,7 @@ export default function TerminalSection({
 
     setTerminalLines([]);
     setShowOSISection(false);
-    setOsiLayersVisible(0);
-    setTcpLayersVisible(0);
-    setCybersecQuote("");
+    setCurrentTypingIndex(-1);
     setHatIndex(-1);
 
     lines.forEach(([delay, html]) => {
@@ -112,47 +141,34 @@ export default function TerminalSection({
       timeouts.push(t);
     });
 
-    let typewriterObj: { cancel: () => void } | null = null;
+    const skipIntro = () => {
+      timeouts.forEach(clearTimeout);
+      setTerminalLines(lines.map((l) => l[1] as string));
+      setShowOSISection(true);
+      setCurrentTypingIndex(15);
+    };
+
+    setSpacebarCallback(skipIntro);
 
     const tOsi = setTimeout(() => {
       setShowOSISection(true);
-
-      for (let i = 0; i <= 7; i++) {
-        const t = setTimeout(() => {
-          setOsiLayersVisible(i);
-        }, i * 150);
-        timeouts.push(t);
-      }
-
-      for (let j = 0; j <= 4; j++) {
-        const t = setTimeout(() => {
-          setTcpLayersVisible(j);
-        }, j * 200);
-        timeouts.push(t);
-      }
-
-      const tQuote = setTimeout(() => {
-        typewriterObj = typeText(
-          `"You may have noticed you have the same skillset as a cybercriminal."`,
-          35,
-          setCybersecQuote,
-          () => {
-            setSpacebarCallback(() => {
-              setHatIndex(0);
-            });
-          }
-        );
-      }, 2000);
-      timeouts.push(tQuote);
-
+      setCurrentTypingIndex(0);
     }, 8800);
     timeouts.push(tOsi);
 
     return () => {
       timeouts.forEach(clearTimeout);
-      if (typewriterObj) typewriterObj.cancel();
     };
   }, [isActive, setSpacebarCallback]);
+
+  // Set spacebar callback when typed out is fully complete
+  useEffect(() => {
+    if (currentTypingIndex === 15) {
+      setSpacebarCallback(() => {
+        setHatIndex(0);
+      });
+    }
+  }, [currentTypingIndex, setSpacebarCallback]);
 
   // Stagger HATS transition
   useEffect(() => {
@@ -217,19 +233,41 @@ export default function TerminalSection({
                   { num: "3", name: "Network", proto: "IP · Routers", color: "var(--amber)" },
                   { num: "2", name: "Data Link", proto: "MAC · Switches", color: "#44aaff" },
                   { num: "1", name: "Physical", proto: "WiFi · Fibre · Cables", color: "#44aaff" }
-                ].map((layer, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex gap-[10px] p-[4px_8px] my-[2px] border-l-2 text-[11px] animate-fadein transition-opacity duration-300 ${
-                      idx < osiLayersVisible ? "opacity-100" : "opacity-0 pointer-events-none"
-                    }`}
-                    style={{ borderLeftColor: layer.color }}
-                  >
-                    <span className="w-[14px]" style={{ color: layer.color }}>{layer.num}</span>
-                    <span className="text-[var(--white)] flex-1">{layer.name}</span>
-                    <span className="text-[var(--dim)] text-[10px]">{layer.proto}</span>
-                  </div>
-                ))}
+                ].map((layer, idx) => {
+                  const isVisible = idx <= currentTypingIndex;
+                  const isTyping = idx === currentTypingIndex;
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex gap-[10px] p-[4px_8px] my-[2px] border-l-2 text-[11px] transition-opacity duration-300 ${
+                        isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+                      }`}
+                      style={{ borderLeftColor: layer.color }}
+                    >
+                      <span className="w-[14px]" style={{ color: layer.color }}>
+                        {isTyping ? (
+                          <TypewriterSpan text={layer.num} active={isTyping} speed={10} onComplete={() => {}} />
+                        ) : (
+                          layer.num
+                        )}
+                      </span>
+                      <span className="text-[var(--white)] flex-1">
+                        {isTyping ? (
+                          <TypewriterSpan text={layer.name} active={isTyping} speed={15} onComplete={() => {}} />
+                        ) : (
+                          layer.name
+                        )}
+                      </span>
+                      <span className="text-[var(--dim)] text-[10px]">
+                        {isTyping ? (
+                          <TypewriterSpan text={layer.proto} active={isTyping} speed={10} onComplete={() => setCurrentTypingIndex(idx + 1)} />
+                        ) : (
+                          layer.proto
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="flex flex-col gap-1">
@@ -241,39 +279,95 @@ export default function TerminalSection({
                   { name: "Transport", proto: "TCP / UDP", color: "var(--amber)" },
                   { name: "Internet", proto: "IP · Routing", color: "#44aaff" },
                   { name: "Link", proto: "Ethernet · WiFi · 4G", color: "#44cc88" }
-                ].map((layer, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex gap-[10px] p-[4px_8px] my-[2px] border-l-2 text-[11px] animate-fadein transition-opacity duration-300 ${
-                      idx < tcpLayersVisible ? "opacity-100" : "opacity-0 pointer-events-none"
-                    }`}
-                    style={{ borderLeftColor: layer.color }}
-                  >
-                    <span className="text-[var(--white)] flex-1">{layer.name}</span>
-                    <span className="text-[var(--dim)] text-[10px]">{layer.proto}</span>
-                  </div>
-                ))}
+                ].map((layer, idx) => {
+                  const globalIdx = idx + 7;
+                  const isVisible = globalIdx <= currentTypingIndex;
+                  const isTyping = globalIdx === currentTypingIndex;
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex gap-[10px] p-[4px_8px] my-[2px] border-l-2 text-[11px] transition-opacity duration-300 ${
+                        isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+                      }`}
+                      style={{ borderLeftColor: layer.color }}
+                    >
+                      <span className="text-[var(--white)] flex-1">
+                        {isTyping ? (
+                          <TypewriterSpan text={layer.name} active={isTyping} speed={15} onComplete={() => {}} />
+                        ) : (
+                          layer.name
+                        )}
+                      </span>
+                      <span className="text-[var(--dim)] text-[10px]">
+                        {isTyping ? (
+                          <TypewriterSpan text={layer.proto} active={isTyping} speed={10} onComplete={() => setCurrentTypingIndex(globalIdx + 1)} />
+                        ) : (
+                          layer.proto
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
                 
-                <div className="mt-4 text-[11px] text-[var(--dim)] tracking-[2px] uppercase">
-                  TCP vs UDP
-                </div>
-                <div className="mt-2 text-[12px] leading-loose">
-                  <span className="text-[var(--teal)] font-bold">TCP</span> <span className="t-dim">→</span> <span className="text-[var(--white)]">Banking, Netflix — reliable</span>
-                  <br />
-                  <span className="text-[var(--amber)] font-bold">UDP</span> <span className="t-dim">→</span> <span className="text-[var(--white)]">Gaming, Calls — fast</span>
-                </div>
+                {currentTypingIndex >= 11 && (
+                  <div className="animate-fadein">
+                    <div className="mt-4 text-[11px] text-[var(--dim)] tracking-[2px] uppercase">
+                      {currentTypingIndex === 11 ? (
+                        <TypewriterSpan text="TCP vs UDP" active={true} speed={15} onComplete={() => setCurrentTypingIndex(12)} />
+                      ) : (
+                        "TCP vs UDP"
+                      )}
+                    </div>
+                    <div className="mt-2 text-[12px] leading-loose">
+                      {currentTypingIndex >= 12 && (
+                        <>
+                          <span className="text-[var(--teal)] font-bold">TCP</span> <span className="t-dim">→</span>{" "}
+                          <span className="text-[var(--white)]">
+                            {currentTypingIndex === 12 ? (
+                              <TypewriterSpan text="Banking, Netflix — reliable" active={true} speed={15} onComplete={() => setCurrentTypingIndex(13)} />
+                            ) : (
+                              "Banking, Netflix — reliable"
+                            )}
+                          </span>
+                        </>
+                      )}
+                      <br />
+                      {currentTypingIndex >= 13 && (
+                        <div className="animate-fadein inline">
+                          <span className="text-[var(--amber)] font-bold">UDP</span> <span className="t-dim">→</span>{" "}
+                          <span className="text-[var(--white)]">
+                            {currentTypingIndex === 13 ? (
+                              <TypewriterSpan text="Gaming, Calls — fast" active={true} speed={15} onComplete={() => setCurrentTypingIndex(14)} />
+                            ) : (
+                              "Gaming, Calls — fast"
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            {cybersecQuote && (
+            {currentTypingIndex >= 14 && (
               <div
                 id="cybersec-quote"
                 className="mt-4 text-[13px] text-[var(--amber)] text-center p-3 border border-[#0a3d1f] tracking-[1px]"
               >
-                {cybersecQuote}
+                {currentTypingIndex === 14 ? (
+                  <TypewriterSpan
+                    text={`"You may have noticed you have the same skillset as a cybercriminal."`}
+                    active={true}
+                    speed={30}
+                    onComplete={() => setCurrentTypingIndex(15)}
+                  />
+                ) : (
+                  `"You may have noticed you have the same skillset as a cybercriminal."`
+                )}
               </div>
             )}
-            {cybersecQuote.length >= 72 && (
+            {currentTypingIndex >= 15 && (
               <div className="text-right text-[11px] text-[var(--dim)] mt-2">
                 [ SPACEBAR ] to meet the hackers
               </div>

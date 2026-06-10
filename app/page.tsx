@@ -88,6 +88,12 @@ export default function Home() {
       if (e.code === "Space") {
         e.preventDefault();
         fireAdvance();
+      } else if (e.code === "ArrowRight" || e.code === "PageDown") {
+        e.preventDefault();
+        setCurrentSection((prev) => Math.min(prev + 1, 7));
+      } else if (e.code === "ArrowLeft" || e.code === "PageUp") {
+        e.preventDefault();
+        setCurrentSection((prev) => Math.max(prev - 1, 1));
       }
     };
 

@@ -18,6 +18,36 @@ export default function InnovationSection({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const animationActiveRef = useRef(false);
+  const typewriterRef = useRef<{ cancel: () => void } | null>(null);
+
+  const drawCompletePencil = (ctx: CanvasRenderingContext2D) => {
+    ctx.clearRect(0, 0, 500, 300);
+    ctx.strokeStyle = "#8a7a60";
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    const paths = [
+      [{ x: 80, y: 150 }, { x: 360, y: 150 }], // body top
+      [{ x: 360, y: 150 }, { x: 420, y: 165 }, { x: 360, y: 180 }], // tip
+      [{ x: 360, y: 180 }, { x: 80, y: 180 }], // body bottom
+      [{ x: 80, y: 180 }, { x: 80, y: 150 }], // body left close
+      [{ x: 80, y: 148 }, { x: 50, y: 148 }, { x: 50, y: 182 }, { x: 80, y: 182 }], // eraser block
+      [{ x: 80, y: 155 }, { x: 80, y: 175 }], // eraser band
+      [{ x: 390, y: 152 }, { x: 415, y: 165 }, { x: 390, y: 178 }], // wood grain
+      [{ x: 120, y: 152 }, { x: 120, y: 178 }], // stripe 1
+      [{ x: 160, y: 152 }, { x: 160, y: 178 }] // stripe 2
+    ];
+
+    paths.forEach((path) => {
+      ctx.beginPath();
+      path.forEach((pt, idx) => {
+        if (idx === 0) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
+      });
+      ctx.stroke();
+    });
+  };
 
   useEffect(() => {
     if (!isActive) {
@@ -29,6 +59,27 @@ export default function InnovationSection({
     setInnovationDrawingComplete(false);
     animationActiveRef.current = true;
 
+    const skipInnovation = () => {
+      animationActiveRef.current = false;
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current = [];
+      if (typewriterRef.current) typewriterRef.current.cancel();
+
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          drawCompletePencil(ctx);
+        }
+      }
+
+      setInnovationDrawingComplete(true);
+      setInnovationQuoteText("Innovation is not the next big thing. It is the pencil.");
+      setSpacebarCallback(onComplete);
+    };
+
+    setSpacebarCallback(skipInnovation);
+
     const t = setTimeout(startPencilAnimation, 500);
     timeoutsRef.current.push(t);
 
@@ -36,6 +87,7 @@ export default function InnovationSection({
       animationActiveRef.current = false;
       timeoutsRef.current.forEach(clearTimeout);
       timeoutsRef.current = [];
+      if (typewriterRef.current) typewriterRef.current.cancel();
     };
   }, [isActive]);
 
@@ -60,10 +112,7 @@ export default function InnovationSection({
       [{ x: 80, y: 155 }, { x: 80, y: 175 }], // eraser band
       [{ x: 390, y: 152 }, { x: 415, y: 165 }, { x: 390, y: 178 }], // wood grain
       [{ x: 120, y: 152 }, { x: 120, y: 178 }], // stripe 1
-      [{ x: 160, y: 152 }, { x: 160, y: 178 }], // stripe 2
-      [{ x: 100, y: 220 }, { x: 400, y: 220 }], // writing line 1
-      [{ x: 100, y: 238 }, { x: 355, y: 238 }], // writing line 2
-      [{ x: 100, y: 256 }, { x: 382, y: 256 }] // writing line 3
+      [{ x: 160, y: 152 }, { x: 160, y: 178 }] // stripe 2
     ];
 
     const expandPath = (pts: { x: number; y: number }[]) => {
@@ -104,7 +153,7 @@ export default function InnovationSection({
       if (stepIndex >= allSteps.length) {
         setInnovationDrawingComplete(true);
         const t = setTimeout(() => {
-          typewriterObj = typeText(
+          typewriterRef.current = typeText(
             "Innovation is not the next big thing. It is the pencil.",
             40,
             setInnovationQuoteText,
