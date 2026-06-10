@@ -1,65 +1,196 @@
-import Image from "next/image";
+"use client";
+
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import BootSection from "../components/BootSection";
+import TerminalSection from "../components/TerminalSection";
+import GitSection from "../components/GitSection";
+import MozillaSection from "../components/MozillaSection";
+import InnovationSection from "../components/InnovationSection";
+import StorytellingSection from "../components/StorytellingSection";
+import OutroSection from "../components/OutroSection";
 
 export default function Home() {
+  const [currentSection, setCurrentSection] = useState(1);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Timer state
+  const [timerSeconds, setTimerSeconds] = useState(420); // 7 minutes
+  const [timerActive, setTimerActive] = useState(false);
+
+  // Custom Cursor Refs
+  const cursorRef = useRef<HTMLDivElement>(null);
+  const cursorTrailRef = useRef<HTMLDivElement>(null);
+
+  // Spacebar Navigation callbacks
+  const advanceRef = useRef<(() => void) | null>(null);
+  const spacebarEnabledRef = useRef(false);
+  const spacebarTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const setSpacebarCallback = useCallback((fn: () => void) => {
+    advanceRef.current = fn;
+    if (spacebarTimeoutRef.current) {
+      clearTimeout(spacebarTimeoutRef.current);
+    }
+    spacebarTimeoutRef.current = setTimeout(() => {
+      spacebarEnabledRef.current = true;
+    }, 100);
+  }, []);
+
+  const fireAdvance = useCallback(() => {
+    if (!spacebarEnabledRef.current || !advanceRef.current) return;
+    spacebarEnabledRef.current = false;
+    if (spacebarTimeoutRef.current) {
+      clearTimeout(spacebarTimeoutRef.current);
+      spacebarTimeoutRef.current = null;
+    }
+    const fn = advanceRef.current;
+    advanceRef.current = null;
+    fn();
+  }, []);
+
+  // Stable section handlers
+  const startPresentation = useCallback(() => {
+    setTimerActive(true);
+    setCurrentSection(2);
+  }, []);
+
+  const handleTerminalComplete = useCallback(() => setCurrentSection(3), []);
+  const handleGitComplete = useCallback(() => setCurrentSection(4), []);
+  const handleMozillaComplete = useCallback(() => setCurrentSection(5), []);
+  const handleInnovationComplete = useCallback(() => setCurrentSection(6), []);
+  const handleStorytellingComplete = useCallback(() => setCurrentSection(7), []);
+
+  // Custom Cursor positioning
+  useEffect(() => {
+    setIsMounted(true);
+    const handleMouseMove = (e: MouseEvent) => {
+      if (cursorRef.current) {
+        cursorRef.current.style.left = `${e.clientX}px`;
+        cursorRef.current.style.top = `${e.clientY}px`;
+      }
+      
+      const timer = setTimeout(() => {
+        if (cursorTrailRef.current) {
+          cursorTrailRef.current.style.left = `${e.clientX}px`;
+          cursorTrailRef.current.style.top = `${e.clientY}px`;
+        }
+      }, 80);
+      return () => clearTimeout(timer);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  // Global Spacebar + Click Navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        fireAdvance();
+      }
+    };
+
+    const handleMouseClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && target.id === "execute-btn") return;
+      fireAdvance();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("click", handleMouseClick);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("click", handleMouseClick);
+    };
+  }, [fireAdvance]);
+
+  // Global Countdown Timer
+  useEffect(() => {
+    if (!timerActive) return;
+
+    const interval = setInterval(() => {
+      setTimerSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timerActive]);
+
+  const formatTimer = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="relative w-full h-full text-white font-sans overflow-hidden">
+      {/* Dynamic scanlines custom styles */}
+      <div className="pointer-events-none fixed inset-0 z-[9990] animate-scanmove bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,255,136,0.015)_2px,rgba(0,255,136,0.015)_4px)]" />
+
+      {/* Custom Cursor */}
+      {isMounted && (
+        <>
+          <div id="cursor" ref={cursorRef} style={{ left: "-100px", top: "-100px" }} />
+          <div id="cursor-trail" ref={cursorTrailRef} style={{ left: "-100px", top: "-100px" }} />
+        </>
+      )}
+
+      {/* Timer Display */}
+      {timerActive && (
+        <div
+          id="timer-display"
+          className={`fixed top-3 right-5 font-mono text-[13px] tracking-[3px] z-[9000] opacity-70 ${
+            timerSeconds <= 60 ? "text-[var(--red)] animate-blink" : "text-[var(--amber)]"
+          }`}
+        >
+          {formatTimer(timerSeconds)}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      )}
+
+      <BootSection
+        isActive={currentSection === 1}
+        onStart={startPresentation}
+      />
+
+      <TerminalSection
+        isActive={currentSection === 2}
+        setSpacebarCallback={setSpacebarCallback}
+        onComplete={handleTerminalComplete}
+      />
+
+      <GitSection
+        isActive={currentSection === 3}
+        setSpacebarCallback={setSpacebarCallback}
+        onComplete={handleGitComplete}
+      />
+
+      <MozillaSection
+        isActive={currentSection === 4}
+        setSpacebarCallback={setSpacebarCallback}
+        onComplete={handleMozillaComplete}
+      />
+
+      <InnovationSection
+        isActive={currentSection === 5}
+        setSpacebarCallback={setSpacebarCallback}
+        onComplete={handleInnovationComplete}
+      />
+
+      <StorytellingSection
+        isActive={currentSection === 6}
+        setSpacebarCallback={setSpacebarCallback}
+        onComplete={handleStorytellingComplete}
+      />
+
+      <OutroSection
+        isActive={currentSection === 7}
+      />
     </div>
   );
 }
