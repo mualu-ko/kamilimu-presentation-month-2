@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import HologramGlobe from "./HologramGlobe";
 
 interface MozillaSectionProps {
   isActive: boolean;
@@ -173,8 +174,8 @@ export default function MozillaSection({
 
   return (
     <div
-      className={`section absolute inset-0 flex-col items-center justify-center overflow-hidden transition-opacity duration-600 ${
-        isActive ? "active" : "hidden"
+      className={`section absolute inset-0 flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ease-in-out ${
+        isActive ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
       style={{ background: "#000" }}
     >
@@ -259,84 +260,14 @@ export default function MozillaSection({
       )}
 
       {deepfakeStep === "map" && (
-        <div id="map-container" className="absolute inset-0 flex flex-col items-center justify-center bg-[#000]">
+        <div id="map-container" className="absolute inset-0 flex flex-col items-center justify-center bg-[#000] p-5">
           <div className="font-mono text-[11px] text-[var(--green)] tracking-[4px] mb-5">
             // ZOOM IN — WHO ARE WE BUILDING FOR?
           </div>
           
-          <svg id="map-svg" viewBox="0 0 600 400" className="w-full max-w-[600px] h-[350px]">
-            <g
-              id="africa-group"
-              transform="translate(130, 110)"
-              className="transition-all duration-1000"
-              style={{
-                opacity: mapZoomStep >= 1 ? 1 : 0.35
-              }}
-            >
-              <path
-                d="M 0 0 L 38 -18 L 86 -10 L 128 12 L 160 36 L 176 72 L 152 116 L 116 146 L 68 162 L 18 154 L -14 120 L -28 74 L -12 32 Z"
-                fill="rgba(26,184,184,0.12)"
-                stroke={mapZoomStep >= 1 ? "var(--green)" : "rgba(26,184,184,0.65)"}
-                strokeWidth="1.8"
-                strokeLinejoin="round"
-              />
-              <text x="78" y="-12" textAnchor="middle" className="font-mono text-[11px] fill-[#00994d] opacity-75">
-                AFRICA
-              </text>
-            </g>
-
-            <g
-              id="kenya-group"
-              transform="translate(340, 210)"
-              className="transition-opacity duration-1000"
-              style={{
-                opacity: mapZoomStep >= 2 ? 1 : 0
-              }}
-            >
-              <path
-                d="M -18 -12 L 14 -24 L 42 -8 L 44 18 L 18 36 L -12 28 L -30 8 Z"
-                fill="rgba(0,255,136,0.18)"
-                stroke="var(--green)"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-              <text x="8" y="48" textAnchor="middle" className="font-mono text-[10px] fill-[var(--green)]">
-                KENYA
-              </text>
-            </g>
-
-            <g
-              id="nairobi-group"
-              transform="translate(335, 220)"
-              className="transition-opacity duration-1000"
-              style={{
-                opacity: mapZoomStep >= 3 ? 1 : 0
-              }}
-            >
-              <circle cx="0" cy="0" r="5" fill="var(--amber)" stroke="var(--amber)" strokeWidth="1">
-                <animate attributeName="r" values="5;10;5" dur="1.5s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="1;0.4;1" dur="1.5s" repeatCount="indefinite" />
-              </circle>
-              <text x="12" y="4" className="font-mono text-[10px] fill-[var(--amber)]">
-                NAIROBI
-              </text>
-            </g>
-
-            <g
-              id="uon-group"
-              transform="translate(335, 220)"
-              className="transition-opacity duration-1000"
-              style={{
-                opacity: mapZoomStep >= 4 ? 1 : 0
-              }}
-            >
-              <circle cx="0" cy="0" r="15" fill="none" stroke="var(--red)" strokeWidth="1" strokeDasharray="4,2" />
-              <circle cx="0" cy="0" r="25" fill="none" stroke="var(--red)" strokeWidth="0.5" strokeDasharray="4,4" opacity="0.5" />
-              <text x="0" y="40" textAnchor="middle" className="font-mono text-[9px] fill-[var(--red)]">
-                YOUR USER IS HERE
-              </text>
-            </g>
-          </svg>
+          <div className="w-full max-w-[600px] h-[350px] relative border border-[#0a3d1f] bg-[rgba(0,13,5,0.4)] rounded-lg overflow-hidden shadow-[inset_0_0_30px_rgba(0,255,136,0.05)]">
+            <HologramGlobe zoomStep={mapZoomStep} />
+          </div>
           
           <div className="font-mono text-[13px] text-[var(--green)] tracking-[3px] mt-5 text-center">
             {mapLabel}

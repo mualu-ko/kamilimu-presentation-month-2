@@ -142,8 +142,8 @@ export default function InnovationSection({
 
   return (
     <div
-      className={`section absolute inset-0 flex flex-col items-center justify-center overflow-hidden transition-opacity duration-600 ${
-        isActive ? "active" : "hidden"
+      className={`section absolute inset-0 flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ease-in-out ${
+        isActive ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
       style={{ background: "var(--warm1)" }}
     >

@@ -62,8 +62,8 @@ export default function OutroSection({ isActive }: OutroSectionProps) {
 
   return (
     <div
-      className={`section absolute inset-0 flex flex-col items-center justify-center gap-[30px] overflow-hidden transition-opacity duration-600 ${
-        isActive ? "active" : "hidden"
+      className={`section absolute inset-0 flex flex-col items-center justify-center gap-[30px] overflow-hidden transition-all duration-1000 ease-in-out ${
+        isActive ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
       style={{ background: "var(--dark)" }}
     >

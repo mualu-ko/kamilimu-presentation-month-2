@@ -171,8 +171,8 @@ export default function TerminalSection({
 
   return (
     <div
-      className={`section absolute inset-0 flex flex-col font-mono transition-opacity duration-600 ${
-        isActive ? "active" : "hidden"
+      className={`section absolute inset-0 flex flex-col font-mono transition-all duration-1000 ease-in-out ${
+        isActive ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
       style={{ background: "var(--dark)" }}
     >

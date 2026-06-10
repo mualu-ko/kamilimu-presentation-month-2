@@ -15,13 +15,13 @@ export default function BootSection({ isActive, onStart }: BootSectionProps) {
 
   return (
     <div
-      className={`section absolute inset-0 flex flex-col items-center justify-center overflow-hidden transition-opacity duration-600 ${
-        isActive ? "active" : "hidden"
+      className={`section absolute inset-0 flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ease-in-out ${
+        isActive ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
       style={{ background: "var(--dark)" }}
     >
       {/* Matrix columns rain background */}
-      {isMounted && <MatrixRain />}
+      {isMounted && isActive && <MatrixRain />}
 
       <div className="absolute inset-0 flex items-center justify-center opacity-7 text-[clamp(180px,25vw,320px)] blur-[1px] select-none text-[var(--green)] font-mono leading-none z-0">
         💻

@@ -109,8 +109,9 @@ export default function StorytellingSection({
 
   return (
     <div
-      className={`section absolute inset-0 flex flex-row overflow-hidden transition-opacity duration-600 ${isActive ? "active" : "hidden"
-        }`}
+      className={`section absolute inset-0 flex flex-row overflow-hidden transition-all duration-1000 ease-in-out ${
+        isActive ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      }`}
       style={{ background: "linear-gradient(135deg, #f5e6c8 0%, #efe3ca 45%, #e7d8b8 100%)", color: "#3b2d18" }}
     >
       {/* Left Photo Strip */}
